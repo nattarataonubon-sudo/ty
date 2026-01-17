@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ข้อความแบบเลื่อนหน้า</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .animated-bg {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            opacity: 0.8;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .stars {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.9), 0 0 20px rgba(255, 255, 255, 0.5);
+            animation: twinkle 3s infinite, float 20s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { 
+                opacity: 0.4;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 1;
+                transform: scale(1.5);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            z-index: 2;
+        }
+
+        .page {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+            pointer-events: none;
+        }
+
+        .page.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .page.fade-out {
+            opacity: 0;
+            transform: translateY(-50px);
+        }
+
+        h1 {
+            font-size: 3.5em;
+            margin-bottom: 40px;
+            color: #fff;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.8), 0 0 60px rgba(255, 107, 107, 0.6);
+            letter-spacing: 3px;
+        }
+
+        p {
+            font-size: 1.8em;
+            line-height: 1.9;
+            margin-bottom: 25px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 255, 255, 0.3);
+            letter-spacing: 1px;
+        }
+
+        .highlight {
+            color: #ffd93d;
+            font-weight: bold;
+            text-shadow: 0 0 20px rgba(255, 217, 61, 0.9), 0 0 40px rgba(255, 217, 61, 0.5);
+        }
+
+        .ending {
+            font-size: 2.2em;
+            color: #fff;
+            font-style: italic;
+            text-shadow: 0 0 30px rgba(149, 225, 211, 0.8);
+        }
+
+        .next-btn {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            color: #fff;
+            padding: 15px 35px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            z-index: 10;
+        }
+
+        .next-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.5);
+        }
+
+        .next-btn:active {
+            transform: scale(0.95);
+        }
+
+        .progress {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1em;
+            z-index: 10;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .click-hint {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1em;
+            animation: pulse 2s infinite;
+            z-index: 10;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .heart-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .heart {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            animation: heartbeat 1.2s ease-in-out infinite;
+            filter: drop-shadow(0 0 40px rgba(255, 0, 100, 0.8));
+        }
+
+        .heart svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% {
+                transform: scale(1);
+            }
+            14% {
+                transform: scale(1.15);
+            }
+            28% {
+                transform: scale(1);
+            }
+            42% {
+                transform: scale(1.15);
+            }
+            56% {
+                transform: scale(1);
+            }
+        }
+
+        .heart-text {
+            margin-top: 40px;
+            font-size: 2.5em;
+            color: #fff;
+            text-shadow: 0 0 30px rgba(255, 105, 180, 0.9);
+            animation: fadeInOut 2s ease-in-out infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        .particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: particleFloat 15s infinite;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="animated-bg"></div>
+    <div class="stars" id="stars"></div>
+    <div class="particles" id="particles"></div>
+    
+    <div class="progress" id="progress">1 / 11</div>
+
+    <div class="container" id="container">
+        <div class="page active" data-page="1">
+            <h1>ก่อนจะเจอคุณ</h1>
+        </div>
+
+        <div class="page" data-page="2">
+            <p>ก่อนหน้านั้น ผมเป็นคนหนึ่งที่ทุ่มเทสุดตัว</p>
+        </div>
+
+        <div class="page" data-page="3">
+            <p>แม้จะท้อแท้กับหลายอย่าง<br>ท้อแท้กับสิ่งที่ทำ ท้อแท้กับทางที่เลือก</p>
+        </div>
+
+        <div class="page" data-page="4">
+            <p>แต่ผมก็ยังอยู่</p>
+        </div>
+
+        <div class="page" data-page="5">
+            <p>ไม่มีเสียงปรบมือ ไม่มีคำชื่นชม<br>ไม่มีใครรู้ว่าผมพยายามแค่ไหน</p>
+        </div>
+
+        <div class="page" data-page="6">
+            <p>ผมทำเว็บมาเรื่อย ๆ ทำเพราะอยากทำ<br>ไม่ใช่เพราะมีใครรอชม</p>
+        </div>
+
+        <div class="page" data-page="7">
+            <p>จนกระทั่งมาเจอคุณ</p>
+        </div>
+
+        <div class="page" data-page="8">
+            <p>ผมเพิ่งรู้ว่า สิ่งที่ผมทำ <span class="highlight">มันมีคุณค่า</span></p>
+        </div>
+
+        <div class="page" data-page="9">
+            <p>ไม่ใช่เพราะคนทั้งโลกเห็น<br>แต่เพราะมีคุณคนหนึ่ง ที่ทำให้มัน <span class="highlight">"ไม่สูญเปล่า"</span></p>
+        </div>
+
+        <div class="page" data-page="10">
+            <p class="ending">ต่อให้ไม่มีใครเห็น<br>อย่างน้อย ผมก็รู้ว่ามันมีความหมาย</p>
+        </div>
+
+        <div class="page" data-page="11">
+            <div class="heart-container">
+                <div class="heart">
+                    <svg viewBox="0 0 32 29.6">
+                        <defs>
+                            <linearGradient id="heartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#ff6b9d;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#c06c84;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path fill="url(#heartGradient)" d="M23.6,0c-3.4,0-6.3,2.7-7.6,5.6C14.7,2.7,11.8,0,8.4,0C3.8,0,0,3.8,0,8.4c0,9.4,9.5,11.9,16,21.2c6.1-9.3,16-12.1,16-21.2C32,3.8,28.2,0,23.6,0z"/>
+                    </svg>
+                </div>
+                <p class="heart-text">💕</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="click-hint" id="clickHint">คลิกที่ไหนก็ได้เพื่อดำเนินการต่อ</div>
+    <button class="next-btn" id="nextBtn">ถัดไป →</button>
+
+    <script>
+        // สร้างดาวพื้นหลัง
+        const starsContainer = document.getElementById('stars');
+        for (let i = 0; i < 200; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            star.style.animationDuration = (2 + Math.random() * 3) + 's';
+            starsContainer.appendChild(star);
+        }
+
+        // สร้างอนุภาคลอย
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (10 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+
+        // จัดการเปลี่ยนหน้า
+        let currentPage = 1;
+        const totalPages = 11;
+        const pages = document.querySelectorAll('.page');
+        const nextBtn = document.getElementById('nextBtn');
+        const progress = document.getElementById('progress');
+        const clickHint = document.getElementById('clickHint');
+        const container = document.getElementById('container');
+
+        function goToNextPage() {
+            if (currentPage < totalPages) {
+                pages[currentPage - 1].classList.remove('active');
+                pages[currentPage - 1].classList.add('fade-out');
+                
+                currentPage++;
+                pages[currentPage - 1].classList.add('active');
+                pages[currentPage - 1].classList.remove('fade-out');
+                
+                progress.textContent = `${currentPage} / ${totalPages}`;
+
+                if (currentPage === totalPages) {
+                    nextBtn.textContent = 'จบ';
+                    clickHint.style.display = 'none';
+                }
+            } else {
+                // รีเซ็ตกลับไปหน้าแรก
+                pages[currentPage - 1].classList.remove('active');
+                pages[currentPage - 1].classList.add('fade-out');
+                currentPage = 1;
+                pages[0].classList.add('active');
+                pages[0].classList.remove('fade-out');
+                progress.textContent = `${currentPage} / ${totalPages}`;
+                nextBtn.textContent = 'ถัดไป →';
+                clickHint.style.display = 'block';
+            }
+        }
+
+        // คลิกปุ่มถัดไป
+        nextBtn.addEventListener('click', goToNextPage);
+
+        // คลิกที่ไหนก็ได้เพื่อไปหน้าถัดไป
+        container.addEventListener('click', goToNextPage);
+
+        // กด Space bar หรือ Enter เพื่อไปหน้าถัดไป
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowRight') {
+                e.preventDefault();
+                goToNextPage();
+            }
+        });
+    </script>
+</body>
+</html>
